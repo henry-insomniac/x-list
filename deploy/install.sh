@@ -6,6 +6,9 @@ if [[ "${EUID:-$(id -u)}" -ne 0 ]]; then
   exit 1
 fi
 
+# 强制关闭代理（你这台机子 apt 正在走 127.0.0.1:7890，会 502）
+unset http_proxy https_proxy all_proxy HTTP_PROXY HTTPS_PROXY ALL_PROXY || true
+
 APP_DIR="${APP_DIR:-/opt/x-list}"
 REPO_URL="${REPO_URL:-https://github.com/henry-insomniac/x-list.git}"
 BRANCH="${BRANCH:-feat/x-list-mvp}"
@@ -14,10 +17,13 @@ DOMAIN_OR_IP="${DOMAIN_OR_IP:-_}"
 API_PORT="${API_PORT:-3000}"
 PG_PORT="${PG_PORT:-5433}"
 
+# apt 强制不走代理（覆盖 /etc/apt/apt.conf.d 里的 Proxy 配置）
+APT_GET=(apt-get -o Acquire::http::Proxy=false -o Acquire::https::Proxy=false)
+
 echo "[1/9] 安装系统依赖（git/curl/nginx）"
 export DEBIAN_FRONTEND=noninteractive
-apt-get update -y
-apt-get install -y git curl ca-certificates gnupg nginx python3
+"${APT_GET[@]}" update -y
+"${APT_GET[@]}" install -y git curl ca-certificates gnupg nginx python3
 
 echo "[2/9] 安装 Docker（如未安装）"
 if ! command -v docker >/dev/null 2>&1; then
@@ -27,13 +33,13 @@ systemctl enable --now docker
 
 if ! docker compose version >/dev/null 2>&1; then
   echo "未检测到 docker compose 插件，尝试安装 docker-compose-plugin..."
-  apt-get install -y docker-compose-plugin || true
+  "${APT_GET[@]}" install -y docker-compose-plugin || true
 fi
 
 echo "[3/9] 安装 Node.js 22 + pnpm（如未安装）"
 if ! command -v node >/dev/null 2>&1; then
   curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
-  apt-get install -y nodejs
+  "${APT_GET[@]}" install -y nodejs
 fi
 if command -v corepack >/dev/null 2>&1; then
   corepack enable || true
