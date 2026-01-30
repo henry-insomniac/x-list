@@ -16,6 +16,7 @@ BRANCH="${BRANCH:-feat/x-list-mvp}"
 DOMAIN_OR_IP="${DOMAIN_OR_IP:-_}"
 API_PORT="${API_PORT:-3000}"
 PG_PORT="${PG_PORT:-5433}"
+NGINX_PORT="${NGINX_PORT:-80}"
 
 # apt 强制不走代理（覆盖 /etc/apt/apt.conf.d 里的 Proxy 配置）
 APT_GET=(apt-get -o Acquire::http::Proxy=false -o Acquire::https::Proxy=false)
@@ -153,7 +154,7 @@ cp -r dist/* /var/www/x-list/
 
 cat > /etc/nginx/sites-available/x-list <<EOF
 server {
-  listen 80;
+  listen ${NGINX_PORT};
   server_name ${DOMAIN_OR_IP};
 
   root /var/www/x-list;
@@ -178,8 +179,8 @@ nginx -t
 systemctl reload nginx
 
 echo "[9/9] 完成"
-echo "前端： http://${DOMAIN_OR_IP}/"
-echo "后端健康检查： http://${DOMAIN_OR_IP}/api/tweets （若为空会返回 items 空数组）"
+echo "前端： http://${DOMAIN_OR_IP}:${NGINX_PORT}/"
+echo "后端接口： http://${DOMAIN_OR_IP}:${NGINX_PORT}/api/tweets （若为空会返回 items 空数组）"
 echo "写接口 API_KEY（已写入 ${APP_DIR}/backend/.env）："
 echo "${API_KEY}"
 
