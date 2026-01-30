@@ -6,9 +6,6 @@ if [[ "${EUID:-$(id -u)}" -ne 0 ]]; then
   exit 1
 fi
 
-# 强制关闭代理（你这台机子 apt 正在走 127.0.0.1:7890，会 502）
-unset http_proxy https_proxy all_proxy HTTP_PROXY HTTPS_PROXY ALL_PROXY || true
-
 APP_DIR="${APP_DIR:-/opt/x-list}"
 REPO_URL="${REPO_URL:-https://github.com/henry-insomniac/x-list.git}"
 BRANCH="${BRANCH:-feat/x-list-mvp}"
@@ -17,6 +14,7 @@ DOMAIN_OR_IP="${DOMAIN_OR_IP:-_}"
 API_PORT="${API_PORT:-3000}"
 PG_PORT="${PG_PORT:-5433}"
 NGINX_PORT="${NGINX_PORT:-80}"
+USE_ARCHIVE="${USE_ARCHIVE:-0}"
 
 # apt 强制不走代理（覆盖 /etc/apt/apt.conf.d 里的 Proxy 配置）
 APT_GET=(apt-get -o Acquire::http::Proxy=false -o Acquire::https::Proxy=false)
@@ -87,6 +85,9 @@ download_archive() {
   echo "已解压到 ${APP_DIR}"
 }
 
+if [[ "${USE_ARCHIVE}" == "1" ]]; then
+  download_archive
+else
 if [[ -d "${APP_DIR}/.git" ]]; then
   echo "更新代码（超时 ${GIT_TIMEOUT}s）..."
   if ! timeout "${GIT_TIMEOUT}" "${GIT_CMD[@]}" -C "${APP_DIR}" fetch --all --prune --tags --progress; then
@@ -101,6 +102,7 @@ else
   if ! timeout "${GIT_TIMEOUT}" "${GIT_CMD[@]}" clone -b "${BRANCH}" --depth 1 --progress "${REPO_URL}" "${APP_DIR}"; then
     download_archive
   fi
+fi
 fi
 
 echo "[5/9] 启动 PostgreSQL（Docker Compose），宿主机端口 ${PG_PORT}"
