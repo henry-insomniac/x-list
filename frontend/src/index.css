@@ -46,11 +46,16 @@ body {
   height: 100%;
 }
 
+html {
+  background: var(--bg-black);
+}
+
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
   background: var(--bg-black);
+  position: relative;
 }
 
 body::before {
@@ -58,6 +63,7 @@ body::before {
   position: fixed;
   inset: 0;
   pointer-events: none;
+  z-index: -1;
   background:
     radial-gradient(900px 520px at 25% 10%, rgba(16, 23, 42, 0.85), rgba(0, 0, 0, 0) 60%),
     radial-gradient(700px 520px at 80% 20%, rgba(41, 121, 255, 0.12), rgba(0, 0, 0, 0) 60%),

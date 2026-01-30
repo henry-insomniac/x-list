@@ -9,9 +9,8 @@
 }
 
 .topBar {
-  position: sticky;
-  top: 0;
-  z-index: 10;
+  /* 之前 sticky + 透明背景会让内容“穿透叠在一起”，观感像错乱 */
+  position: relative;
   padding: 18px 0 14px;
   backdrop-filter: none;
   background: none;
