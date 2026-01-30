@@ -65,14 +65,42 @@ mkdir -p "${APP_DIR}"
 export GIT_TERMINAL_PROMPT=0
 GIT_TIMEOUT="${GIT_TIMEOUT:-240}"
 GIT_CMD=(git -c http.lowSpeedLimit=1 -c http.lowSpeedTime=60)
+REPO_OWNER_REPO="${REPO_OWNER_REPO:-henry-insomniac/x-list}"
+ARCHIVE_BASE="${ARCHIVE_BASE:-https://codeload.github.com/${REPO_OWNER_REPO}/tar.gz/refs/heads}"
+ARCHIVE_URL="${ARCHIVE_URL:-${ARCHIVE_BASE}/${BRANCH}}"
+ARCHIVE_PROXY_PREFIX="${ARCHIVE_PROXY_PREFIX:-}"
+
+download_archive() {
+  echo "git 连接慢，改用压缩包下载..."
+  rm -rf "${APP_DIR}"
+  mkdir -p "${APP_DIR}"
+  tmp="/tmp/x-list-${BRANCH//\//-}.tgz"
+  url="${ARCHIVE_PROXY_PREFIX}${ARCHIVE_URL}"
+  echo "下载：${url}"
+  curl -fL --connect-timeout 15 --max-time "${GIT_TIMEOUT}" "${url}" -o "${tmp}"
+  tar -xzf "${tmp}" -C /tmp
+  # 解压目录一般为 <repo>-<branch> 或 <repo>-<sha>
+  extracted="$(tar -tzf "${tmp}" | head -n1 | cut -d/ -f1)"
+  rm -rf "${APP_DIR}"
+  mv "/tmp/${extracted}" "${APP_DIR}"
+  rm -f "${tmp}"
+  echo "已解压到 ${APP_DIR}"
+}
+
 if [[ -d "${APP_DIR}/.git" ]]; then
   echo "更新代码（超时 ${GIT_TIMEOUT}s）..."
-  timeout "${GIT_TIMEOUT}" "${GIT_CMD[@]}" -C "${APP_DIR}" fetch --all --prune --tags --progress
+  if ! timeout "${GIT_TIMEOUT}" "${GIT_CMD[@]}" -C "${APP_DIR}" fetch --all --prune --tags --progress; then
+    download_archive
+  fi
   "${GIT_CMD[@]}" -C "${APP_DIR}" checkout "${BRANCH}"
-  timeout "${GIT_TIMEOUT}" "${GIT_CMD[@]}" -C "${APP_DIR}" pull --ff-only --progress
+  if ! timeout "${GIT_TIMEOUT}" "${GIT_CMD[@]}" -C "${APP_DIR}" pull --ff-only --progress; then
+    download_archive
+  fi
 else
   echo "克隆代码（超时 ${GIT_TIMEOUT}s）..."
-  timeout "${GIT_TIMEOUT}" "${GIT_CMD[@]}" clone -b "${BRANCH}" --depth 1 --progress "${REPO_URL}" "${APP_DIR}"
+  if ! timeout "${GIT_TIMEOUT}" "${GIT_CMD[@]}" clone -b "${BRANCH}" --depth 1 --progress "${REPO_URL}" "${APP_DIR}"; then
+    download_archive
+  fi
 fi
 
 echo "[5/9] 启动 PostgreSQL（Docker Compose），宿主机端口 ${PG_PORT}"
