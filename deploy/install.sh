@@ -11,9 +11,11 @@ REPO_URL="${REPO_URL:-https://github.com/henry-insomniac/x-list.git}"
 BRANCH="${BRANCH:-feat/x-list-mvp}"
 
 DOMAIN_OR_IP="${DOMAIN_OR_IP:-_}"
-API_PORT="${API_PORT:-3000}"
+# 默认避开常见占用（例如 Gitea 常用 3000）
+API_PORT="${API_PORT:-3100}"
 PG_PORT="${PG_PORT:-5433}"
-NGINX_PORT="${NGINX_PORT:-80}"
+# 默认避开 80/443 等常用端口，且避免浏览器不安全端口
+NGINX_PORT="${NGINX_PORT:-8090}"
 USE_ARCHIVE="${USE_ARCHIVE:-0}"
 
 # apt 强制不走代理（覆盖 /etc/apt/apt.conf.d 里的 Proxy 配置）
