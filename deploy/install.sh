@@ -62,12 +62,17 @@ fi
 
 echo "[4/9] 获取代码到 ${APP_DIR}"
 mkdir -p "${APP_DIR}"
+export GIT_TERMINAL_PROMPT=0
+GIT_TIMEOUT="${GIT_TIMEOUT:-240}"
+GIT_CMD=(git -c http.lowSpeedLimit=1 -c http.lowSpeedTime=60)
 if [[ -d "${APP_DIR}/.git" ]]; then
-  git -C "${APP_DIR}" fetch --all --prune
-  git -C "${APP_DIR}" checkout "${BRANCH}"
-  git -C "${APP_DIR}" pull --ff-only
+  echo "更新代码（超时 ${GIT_TIMEOUT}s）..."
+  timeout "${GIT_TIMEOUT}" "${GIT_CMD[@]}" -C "${APP_DIR}" fetch --all --prune --tags --progress
+  "${GIT_CMD[@]}" -C "${APP_DIR}" checkout "${BRANCH}"
+  timeout "${GIT_TIMEOUT}" "${GIT_CMD[@]}" -C "${APP_DIR}" pull --ff-only --progress
 else
-  git clone -b "${BRANCH}" "${REPO_URL}" "${APP_DIR}"
+  echo "克隆代码（超时 ${GIT_TIMEOUT}s）..."
+  timeout "${GIT_TIMEOUT}" "${GIT_CMD[@]}" clone -b "${BRANCH}" --depth 1 --progress "${REPO_URL}" "${APP_DIR}"
 fi
 
 echo "[5/9] 启动 PostgreSQL（Docker Compose），宿主机端口 ${PG_PORT}"
