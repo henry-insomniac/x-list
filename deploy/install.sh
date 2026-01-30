@@ -46,8 +46,17 @@ fi
 # 且 pnpm 可能是 corepack 的 shim，即便没安装 pnpm 也会 “command -v pnpm” 成功。
 # 这里强制检测 shim 并用 npm 全局安装 pnpm，避免触发 corepack。
 PNPM_BIN="$(command -v pnpm || true)"
-if [[ -z "${PNPM_BIN}" ]] || grep -q "corepack" "${PNPM_BIN}" 2>/dev/null; then
-  npm i -g pnpm@10.28.2
+NEED_PNPM=0
+if [[ -z "${PNPM_BIN}" ]]; then
+  NEED_PNPM=1
+elif [[ -f "${PNPM_BIN}" ]] && grep -q "corepack" "${PNPM_BIN}" 2>/dev/null; then
+  # 删除 corepack shim，避免 npm install -g 报 EEXIST
+  rm -f "${PNPM_BIN}" || true
+  rm -f "$(dirname "${PNPM_BIN}")/pnpx" || true
+  NEED_PNPM=1
+fi
+if [[ "${NEED_PNPM}" -eq 1 ]]; then
+  npm i -g pnpm@10.28.2 --force
 fi
 
 echo "[4/9] 获取代码到 ${APP_DIR}"
