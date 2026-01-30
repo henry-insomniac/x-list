@@ -41,12 +41,13 @@ if ! command -v node >/dev/null 2>&1; then
   curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
   "${APT_GET[@]}" install -y nodejs
 fi
-if command -v corepack >/dev/null 2>&1; then
-  corepack enable || true
-  corepack prepare pnpm@latest --activate || true
-fi
-if ! command -v pnpm >/dev/null 2>&1; then
-  npm i -g pnpm
+
+# 重要：某些环境（比如 nvm + Node 23）自带的 corepack 会因为签名 key 不匹配而报错。
+# 且 pnpm 可能是 corepack 的 shim，即便没安装 pnpm 也会 “command -v pnpm” 成功。
+# 这里强制检测 shim 并用 npm 全局安装 pnpm，避免触发 corepack。
+PNPM_BIN="$(command -v pnpm || true)"
+if [[ -z "${PNPM_BIN}" ]] || grep -q "corepack" "${PNPM_BIN}" 2>/dev/null; then
+  npm i -g pnpm@10.28.2
 fi
 
 echo "[4/9] 获取代码到 ${APP_DIR}"
