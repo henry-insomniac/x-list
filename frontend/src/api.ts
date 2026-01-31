@@ -5,6 +5,7 @@ export type Tweet = {
   author: string | null;
   url: string;
   tweetId: string | null;
+  channel: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -56,10 +57,12 @@ async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
 export async function listTweets(args: {
   cursor?: string | null;
   limit?: number;
+  channel?: string | null;
   signal?: AbortSignal;
 }): Promise<TweetListResponse> {
   const url = withParams("/api/tweets", {
     cursor: args.cursor ?? undefined,
+    channel: args.channel ?? undefined,
     limit: args.limit ?? 20
   });
   return fetchJson<TweetListResponse>(url, { signal: args.signal });
@@ -69,11 +72,13 @@ export async function searchTweets(args: {
   q: string;
   cursor?: string | null;
   limit?: number;
+  channel?: string | null;
   signal?: AbortSignal;
 }): Promise<TweetListResponse> {
   const url = withParams("/api/tweets/search", {
     q: args.q,
     cursor: args.cursor ?? undefined,
+    channel: args.channel ?? undefined,
     limit: args.limit ?? 20
   });
   return fetchJson<TweetListResponse>(url, { signal: args.signal });
