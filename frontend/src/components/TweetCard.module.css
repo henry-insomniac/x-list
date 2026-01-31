@@ -8,6 +8,14 @@
   overflow: hidden;
 }
 
+.compact {
+  padding: 12px 12px 10px;
+}
+
+.read {
+  opacity: 0.86;
+}
+
 .card::before {
   content: "";
   position: absolute;
@@ -137,6 +145,10 @@
   overflow: hidden;
 }
 
+.compact .content {
+  -webkit-line-clamp: 4;
+}
+
 .contentExpanded {
   margin-top: 10px;
   white-space: pre-wrap;
@@ -152,6 +164,13 @@
   gap: 10px;
   justify-content: space-between;
   align-items: center;
+}
+
+.actionRow {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .secondaryBtn {

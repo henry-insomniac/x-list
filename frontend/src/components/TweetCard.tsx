@@ -19,7 +19,21 @@ function formatTime(iso: string): string {
   }).format(d);
 }
 
-export function TweetCard({ tweet }: { tweet: Tweet }) {
+export function TweetCard({
+  tweet,
+  density = "comfortable",
+  isRead = false,
+  onToggleRead,
+  onCopyLink,
+  onOpen
+}: {
+  tweet: Tweet;
+  density?: "comfortable" | "compact";
+  isRead?: boolean;
+  onToggleRead?: () => void;
+  onCopyLink?: () => void;
+  onOpen?: () => void;
+}) {
   const [expanded, setExpanded] = useState(false);
   const [showEmbed, setShowEmbed] = useState(false);
 
@@ -30,7 +44,15 @@ export function TweetCard({ tweet }: { tweet: Tweet }) {
   const canEmbed = Boolean(tweet.tweetId);
 
   return (
-    <article className={styles.card}>
+    <article
+      className={[
+        styles.card,
+        density === "compact" ? styles.compact : "",
+        isRead ? styles.read : ""
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
       <header className={styles.header}>
         <div className={styles.metaLeft}>
           <div className={styles.authorLine}>
@@ -50,10 +72,18 @@ export function TweetCard({ tweet }: { tweet: Tweet }) {
               </time>
             </div>
           </div>
-          {tweet.title ? <div className={styles.title}>{tweet.title}</div> : null}
+          {tweet.title && density !== "compact" ? (
+            <div className={styles.title}>{tweet.title}</div>
+          ) : null}
         </div>
         <div className={styles.actions}>
-          <a className={styles.openLink} href={tweet.url} target="_blank" rel="noreferrer">
+          <a
+            className={styles.openLink}
+            href={tweet.url}
+            target="_blank"
+            rel="noreferrer"
+            onClick={onOpen}
+          >
             打开原推
           </a>
         </div>
@@ -70,11 +100,23 @@ export function TweetCard({ tweet }: { tweet: Tweet }) {
           <span />
         )}
 
-        {canEmbed ? (
-          <button className={styles.primaryBtn} onClick={() => setShowEmbed((v) => !v)}>
-            {showEmbed ? "隐藏预览" : "查看预览"}
-          </button>
-        ) : null}
+        <div className={styles.actionRow}>
+          {onCopyLink ? (
+            <button className={styles.secondaryBtn} onClick={onCopyLink}>
+              复制链接
+            </button>
+          ) : null}
+          {onToggleRead ? (
+            <button className={styles.secondaryBtn} onClick={onToggleRead}>
+              {isRead ? "标记未读" : "标记已读"}
+            </button>
+          ) : null}
+          {canEmbed ? (
+            <button className={styles.primaryBtn} onClick={() => setShowEmbed((v) => !v)}>
+              {showEmbed ? "隐藏预览" : "查看预览"}
+            </button>
+          ) : null}
+        </div>
       </div>
 
       {canEmbed && showEmbed ? <TweetEmbed url={tweet.url} /> : null}

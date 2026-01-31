@@ -92,6 +92,22 @@
   padding: 12px 12px;
 }
 
+.clearBtn {
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  border: 1px solid rgba(80, 80, 80, 0.9);
+  background: rgba(30, 30, 30, 0.55);
+  color: var(--text-main);
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.clearBtn:hover {
+  border-color: var(--border-2);
+}
+
 .searchIcon {
   width: 18px;
   height: 18px;
@@ -131,6 +147,63 @@
 .statPill strong {
   color: var(--text-main);
   font-weight: 800;
+}
+
+.chipsRow {
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.chip {
+  border: 1px solid rgba(80, 80, 80, 0.9);
+  background: rgba(30, 30, 30, 0.55);
+  color: var(--text-sub);
+  border-radius: 999px;
+  padding: 7px 11px;
+  font-size: 12px;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.18) inset;
+  cursor: pointer;
+  user-select: none;
+}
+
+.chip strong {
+  color: var(--text-main);
+  font-weight: 900;
+}
+
+.chipActive {
+  border-color: rgba(187, 134, 252, 0.6);
+  background: rgba(187, 134, 252, 0.12);
+  color: var(--text-main);
+}
+
+.historyRow {
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.historyHint {
+  color: var(--text-sub);
+  font-size: 12px;
+  margin-right: 2px;
+}
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  background: rgba(18, 18, 18, 0.92);
+  border: 1px solid rgba(66, 66, 66, 0.75);
+  border-radius: 16px;
+  padding: 10px 12px;
+  color: var(--text-main);
+  box-shadow: var(--shadow-elev2);
+  max-width: min(520px, calc(100% - 24px));
 }
 
 .sectionHeader {
