@@ -2,6 +2,8 @@ import { useMemo, useState } from "react";
 
 import type { Tweet } from "../api";
 
+import type { Channel } from "../channels";
+import { channelLabel } from "../channels";
 import { TweetEmbed } from "./TweetEmbed";
 import styles from "./TweetCard.module.css";
 
@@ -22,6 +24,7 @@ export function TweetCard({ tweet }: { tweet: Tweet }) {
   const [showEmbed, setShowEmbed] = useState(false);
 
   const createdText = useMemo(() => formatTime(tweet.createdAt), [tweet.createdAt]);
+  const channel = (tweet.channel || "x") as Channel;
 
   const showToggle = tweet.content.length > 220;
   const canEmbed = Boolean(tweet.tweetId);
@@ -31,9 +34,17 @@ export function TweetCard({ tweet }: { tweet: Tweet }) {
       <header className={styles.header}>
         <div className={styles.metaLeft}>
           <div className={styles.authorLine}>
-            <span className={styles.avatar} aria-hidden="true" />
+            <span
+              className={`${styles.avatar} ${
+                channel === "xhs" ? styles.avatarXhs : styles.avatarX
+              }`}
+              aria-hidden="true"
+            />
             <div className={styles.authorBlock}>
-              <div className={styles.author}>{tweet.author ?? "未知博主"}</div>
+              <div className={styles.authorRow}>
+                <div className={styles.author}>{tweet.author ?? "未知博主"}</div>
+                <span className={styles.channelBadge}>{channelLabel(channel)}</span>
+              </div>
               <time className={styles.time} dateTime={tweet.createdAt}>
                 {createdText}
               </time>

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { listTweets, searchTweets, type Tweet } from "./api";
 import "./App.css";
+import { ALL_CHANNEL, type ChannelFilter } from "./channels";
 import { TweetCard } from "./components/TweetCard";
 
 const PAGE_LIMIT = 20;
@@ -18,6 +19,8 @@ function useDebouncedValue<T>(value: T, delayMs: number) {
 export default function App() {
   const [q, setQ] = useState("");
   const dq = useDebouncedValue(q, 350);
+  const [channel, setChannel] = useState<ChannelFilter>(ALL_CHANNEL);
+  const [olderExpanded, setOlderExpanded] = useState(false);
 
   const [items, setItems] = useState<Tweet[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
@@ -26,6 +29,18 @@ export default function App() {
 
   const controllerRef = useRef<AbortController | null>(null);
   const mode = useMemo(() => (dq.trim() ? "search" : "list"), [dq]);
+  const channelParam = channel === ALL_CHANNEL ? null : channel;
+
+  const now = Date.now();
+  const recentBoundaryMs = now - 24 * 60 * 60 * 1000;
+  const recentItems = useMemo(() => {
+    if (mode !== "list") return items;
+    return items.filter((t) => Date.parse(t.createdAt) >= recentBoundaryMs);
+  }, [items, mode, recentBoundaryMs]);
+  const olderItems = useMemo(() => {
+    if (mode !== "list") return [];
+    return items.filter((t) => Date.parse(t.createdAt) < recentBoundaryMs);
+  }, [items, mode, recentBoundaryMs]);
 
   async function loadFirstPage() {
     controllerRef.current?.abort();
@@ -36,11 +51,17 @@ export default function App() {
     setError(null);
     setItems([]);
     setNextCursor(null);
+    setOlderExpanded(false);
     try {
       const data =
         mode === "search"
-          ? await searchTweets({ q: dq.trim(), limit: PAGE_LIMIT, signal: controller.signal })
-          : await listTweets({ limit: PAGE_LIMIT, signal: controller.signal });
+          ? await searchTweets({
+              q: dq.trim(),
+              limit: PAGE_LIMIT,
+              channel: channelParam,
+              signal: controller.signal
+            })
+          : await listTweets({ limit: PAGE_LIMIT, channel: channelParam, signal: controller.signal });
       setItems(data.items);
       setNextCursor(data.nextCursor);
     } catch (e) {
@@ -59,8 +80,13 @@ export default function App() {
     try {
       const data =
         mode === "search"
-          ? await searchTweets({ q: dq.trim(), cursor: nextCursor, limit: PAGE_LIMIT })
-          : await listTweets({ cursor: nextCursor, limit: PAGE_LIMIT });
+          ? await searchTweets({
+              q: dq.trim(),
+              cursor: nextCursor,
+              limit: PAGE_LIMIT,
+              channel: channelParam
+            })
+          : await listTweets({ cursor: nextCursor, limit: PAGE_LIMIT, channel: channelParam });
       setItems((prev) => [...prev, ...data.items]);
       setNextCursor(data.nextCursor);
     } catch (e) {
@@ -73,7 +99,7 @@ export default function App() {
   useEffect(() => {
     loadFirstPage();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, dq]);
+  }, [mode, dq, channel]);
 
   return (
     <div className="page">
@@ -88,6 +114,16 @@ export default function App() {
           </div>
         </div>
         <div className="searchRow">
+          <select
+            className="channelSelect"
+            value={channel}
+            onChange={(e) => setChannel(e.target.value as ChannelFilter)}
+            aria-label="渠道筛选"
+          >
+            <option value="all">全部</option>
+            <option value="x">X</option>
+            <option value="xhs">小红书</option>
+          </select>
           <div className="searchBox">
             <svg className="searchIcon" viewBox="0 0 24 24" aria-hidden="true">
               <path
@@ -111,6 +147,9 @@ export default function App() {
           <span className="statPill">
             条目：<strong>{items.length}</strong>
           </span>
+          <span className="statPill">
+            渠道：<strong>{channel === "all" ? "全部" : channel}</strong>
+          </span>
         </div>
       </div>
 
@@ -124,11 +163,38 @@ export default function App() {
         </div>
       ) : null}
 
-      <div className="list">
-        {items.map((t) => (
-          <TweetCard key={t.id} tweet={t} />
-        ))}
-      </div>
+      {mode === "list" ? (
+        <>
+          <div className="sectionHeader">
+            <h2 className="sectionTitle">最近 24 小时（{recentItems.length}）</h2>
+          </div>
+          <div className="list">
+            {recentItems.map((t) => (
+              <TweetCard key={t.id} tweet={t} />
+            ))}
+          </div>
+
+          <div className="sectionHeader">
+            <h2 className="sectionTitle">更早（{olderItems.length}）</h2>
+            <button className="sectionBtn" onClick={() => setOlderExpanded((v) => !v)}>
+              {olderExpanded ? "收起" : "展开"}
+            </button>
+          </div>
+          {olderExpanded ? (
+            <div className="list">
+              {olderItems.map((t) => (
+                <TweetCard key={t.id} tweet={t} />
+              ))}
+            </div>
+          ) : null}
+        </>
+      ) : (
+        <div className="list">
+          {items.map((t) => (
+            <TweetCard key={t.id} tweet={t} />
+          ))}
+        </div>
+      )}
 
       {!loading && items.length === 0 ? (
         <div className="emptyState">暂无内容。你可以用顶部搜索试试。</div>

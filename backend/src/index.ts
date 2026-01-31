@@ -1,3 +1,5 @@
+import "dotenv/config";
+
 import Fastify from "fastify";
 import cors from "@fastify/cors";
 import rateLimit from "@fastify/rate-limit";
@@ -13,18 +15,21 @@ const createTweetBodySchema = z.object({
   title: z.string().trim().min(1).max(280).optional(),
   content: z.string().trim().min(1).max(4000),
   author: z.string().trim().min(1).max(100).optional(),
-  url: z.string().trim().url().max(2048)
+  url: z.string().trim().url().max(2048),
+  channel: z.string().trim().min(1).max(32).optional()
 });
 
 const listQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(50).optional(),
-  cursor: z.string().optional()
+  cursor: z.string().optional(),
+  channel: z.string().trim().min(1).max(32).optional()
 });
 
 const searchQuerySchema = z.object({
   q: z.string().trim().min(1).max(200),
   limit: z.coerce.number().int().min(1).max(50).optional(),
-  cursor: z.string().optional()
+  cursor: z.string().optional(),
+  channel: z.string().trim().min(1).max(32).optional()
 });
 
 function toDto(row: any) {
@@ -35,6 +40,7 @@ function toDto(row: any) {
     author: row.author,
     url: row.url,
     tweetId: row.tweet_id,
+    channel: row.channel,
     createdAt: row.created_at?.toISOString?.() ?? row.created_at,
     updatedAt: row.updated_at?.toISOString?.() ?? row.updated_at
   };
@@ -93,20 +99,29 @@ async function main() {
 
     const { title, content, author, url } = parsed.data;
     const tweetId = extractTweetId(url);
+    const channelRaw = (parsed.data.channel ?? "x").trim().toLowerCase();
+    if (!env.allowedChannels.has(channelRaw)) {
+      return reply.status(400).send({
+        error: {
+          message: `Invalid channel (allowed: ${Array.from(env.allowedChannels).join(",")})`
+        }
+      });
+    }
 
     const result = await pool.query(
       `
-      INSERT INTO tweets (title, content, author, url, tweet_id)
-      VALUES ($1, $2, $3, $4, $5)
+      INSERT INTO tweets (title, content, author, url, tweet_id, channel)
+      VALUES ($1, $2, $3, $4, $5, $6)
       ON CONFLICT (url) DO UPDATE
       SET title = EXCLUDED.title,
           content = EXCLUDED.content,
           author = EXCLUDED.author,
           tweet_id = EXCLUDED.tweet_id,
+          channel = EXCLUDED.channel,
           updated_at = now()
-      RETURNING id, title, content, author, url, tweet_id, created_at, updated_at
+      RETURNING id, title, content, author, url, tweet_id, channel, created_at, updated_at
       `,
-      [title ?? null, content, author ?? null, url, tweetId]
+      [title ?? null, content, author ?? null, url, tweetId, channelRaw]
     );
 
       return reply.status(201).send({ item: toDto(result.rows[0]) });
@@ -121,19 +136,34 @@ async function main() {
 
     const limit = parsed.data.limit ?? 20;
     const cursor = decodeCursor(parsed.data.cursor);
+    const channel = parsed.data.channel?.trim().toLowerCase();
+    if (channel && !env.allowedChannels.has(channel)) {
+      return reply.status(400).send({
+        error: {
+          message: `Invalid channel (allowed: ${Array.from(env.allowedChannels).join(",")})`
+        }
+      });
+    }
 
     const params: any[] = [];
-    let where = "";
+    const whereParts: string[] = [];
+    if (channel) {
+      params.push(channel);
+      whereParts.push(`channel = $${params.length}`);
+    }
     if (cursor) {
       params.push(cursor.createdAt, cursor.id);
-      where = `WHERE (created_at, id) < ($1::timestamptz, $2::uuid)`;
+      whereParts.push(
+        `(created_at, id) < ($${params.length - 1}::timestamptz, $${params.length}::uuid)`
+      );
     }
     params.push(limit);
     const limitParamIndex = params.length;
+    const where = whereParts.length ? `WHERE ${whereParts.join(" AND ")}` : "";
 
     const result = await pool.query(
       `
-      SELECT id, title, content, author, url, tweet_id, created_at, updated_at
+      SELECT id, title, content, author, url, tweet_id, channel, created_at, updated_at
       FROM tweets
       ${where}
       ORDER BY created_at DESC, id DESC
@@ -162,19 +192,31 @@ async function main() {
     const limit = parsed.data.limit ?? 20;
     const cursor = decodeCursor(parsed.data.cursor);
     const qLike = `%${q}%`;
+    const channel = parsed.data.channel?.trim().toLowerCase();
+    if (channel && !env.allowedChannels.has(channel)) {
+      return reply.status(400).send({
+        error: {
+          message: `Invalid channel (allowed: ${Array.from(env.allowedChannels).join(",")})`
+        }
+      });
+    }
 
     const params: any[] = [qLike, qLike, qLike];
     let where = `WHERE (title ILIKE $1 OR content ILIKE $2 OR author ILIKE $3)`;
+    if (channel) {
+      params.push(channel);
+      where += ` AND channel = $${params.length}`;
+    }
     if (cursor) {
       params.push(cursor.createdAt, cursor.id);
-      where += ` AND (created_at, id) < ($4::timestamptz, $5::uuid)`;
+      where += ` AND (created_at, id) < ($${params.length - 1}::timestamptz, $${params.length}::uuid)`;
     }
     params.push(limit);
     const limitParamIndex = params.length;
 
     const result = await pool.query(
       `
-      SELECT id, title, content, author, url, tweet_id, created_at, updated_at
+      SELECT id, title, content, author, url, tweet_id, channel, created_at, updated_at
       FROM tweets
       ${where}
       ORDER BY created_at DESC, id DESC

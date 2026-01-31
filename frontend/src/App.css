@@ -9,9 +9,8 @@
 }
 
 .topBar {
-  position: sticky;
-  top: 0;
-  z-index: 10;
+  /* 之前 sticky + 透明背景会让内容“穿透叠在一起”，观感像错乱 */
+  position: relative;
   padding: 18px 0 14px;
   backdrop-filter: none;
   background: none;
@@ -62,6 +61,23 @@
   margin-top: 14px;
   display: flex;
   gap: 10px;
+}
+
+.channelSelect {
+  flex: 0 0 auto;
+  border-radius: 16px;
+  border: 1px solid var(--border-1);
+  background: rgba(18, 18, 18, 0.65);
+  color: var(--text-main);
+  padding: 12px 12px;
+  box-shadow: var(--shadow-elev1);
+  font-weight: 800;
+  font-size: 13px;
+  outline: none;
+}
+
+.channelSelect:focus {
+  border-color: rgba(187, 134, 252, 0.6);
 }
 
 .searchBox {
@@ -115,6 +131,32 @@
 .statPill strong {
   color: var(--text-main);
   font-weight: 800;
+}
+
+.sectionHeader {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-sub);
+  font-weight: 900;
+  letter-spacing: 0.2px;
+}
+
+.sectionBtn {
+  border-radius: 999px;
+  padding: 8px 12px;
+  border: 1px solid rgba(80, 80, 80, 0.9);
+  background: rgba(30, 30, 30, 0.5);
+  color: var(--text-main);
+  font-weight: 850;
+  font-size: 12px;
 }
 
 .list {

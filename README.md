@@ -46,3 +46,20 @@ pnpm dev
 - 写接口（录入/删除）需要 Header：`X-API-Key`
 - 读接口（列表/搜索）公开
 
+## 服务器一键部署（Ubuntu/Debian，root）
+
+在服务器上执行（会安装 Docker/Node/Nginx，拉取分支并完成部署）：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/henry-insomniac/x-list/feat/x-list-mvp/deploy/install.sh | bash
+```
+
+可选环境变量（执行前加在命令前面）：
+
+- `DOMAIN_OR_IP`：Nginx 的 `server_name`（默认 `_`）
+- `NGINX_PORT`：Nginx 监听端口（默认 `8090`；注意 `6666` 会被浏览器拦截为不安全端口）
+- `PG_PORT`：Postgres 映射端口（默认 `5433`）
+- `API_PORT`：后端端口（默认 `3100`，避免与 Gitea 等服务冲突）
+- `CHANNELS_ALLOWED`：允许的渠道列表（默认 `x,xhs`，逗号分隔；用于校验写入与筛选）
+- `BRANCH`：部署分支（默认 `feat/x-list-mvp`）
+
