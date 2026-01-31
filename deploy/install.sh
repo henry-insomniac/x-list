@@ -17,6 +17,7 @@ PG_PORT="${PG_PORT:-5433}"
 # 默认避开 80/443 等常用端口，且避免浏览器不安全端口
 NGINX_PORT="${NGINX_PORT:-8090}"
 USE_ARCHIVE="${USE_ARCHIVE:-0}"
+CHANNELS_ALLOWED="${CHANNELS_ALLOWED:-x,xhs}"
 
 # apt 强制不走代理（覆盖 /etc/apt/apt.conf.d 里的 Proxy 配置）
 APT_GET=(apt-get -o Acquire::http::Proxy=false -o Acquire::https::Proxy=false)
@@ -153,6 +154,12 @@ if ! grep -q '^PORT=' .env; then
   echo "PORT=${API_PORT}" >> .env
 else
   sed -i "s|^PORT=.*$|PORT=${API_PORT}|g" .env
+fi
+
+if ! grep -q '^CHANNELS_ALLOWED=' .env; then
+  echo "CHANNELS_ALLOWED=${CHANNELS_ALLOWED}" >> .env
+else
+  sed -i "s|^CHANNELS_ALLOWED=.*$|CHANNELS_ALLOWED=${CHANNELS_ALLOWED}|g" .env
 fi
 
 if ! grep -q '^CORS_ORIGIN=' .env; then

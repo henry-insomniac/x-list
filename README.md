@@ -60,5 +60,6 @@ curl -fsSL https://raw.githubusercontent.com/henry-insomniac/x-list/feat/x-list-
 - `NGINX_PORT`：Nginx 监听端口（默认 `8090`；注意 `6666` 会被浏览器拦截为不安全端口）
 - `PG_PORT`：Postgres 映射端口（默认 `5433`）
 - `API_PORT`：后端端口（默认 `3100`，避免与 Gitea 等服务冲突）
+- `CHANNELS_ALLOWED`：允许的渠道列表（默认 `x,xhs`，逗号分隔；用于校验写入与筛选）
 - `BRANCH`：部署分支（默认 `feat/x-list-mvp`）
 
